@@ -75,10 +75,10 @@ class RpcClient(object):
                     result_is_intermidiate_obj = True
                     intermidiate_obj = RpcObjectProxy(intermidiate_uri, self)
                     intermidiate_obj._evaluated__ = True
-                    intermidiate_obj._evaluated_value__ = resp['result']
+                    intermidiate_obj._evaluated_value__ = resp.get('result')
                     intermidiate_obj._is_intermediate_uri__ = True
 
-                obj_proxy._evaluated_value__ = resp['result']
+                obj_proxy._evaluated_value__ = resp.get('result')
             obj_proxy._evaluated__ = True
 
         if result_is_intermidiate_obj:
@@ -96,11 +96,11 @@ class RpcClient(object):
                 if intermidiate_uri:
                     intermidiate_obj = RpcObjectProxy(intermidiate_uri, self)
                     intermidiate_obj._evaluated__ = True
-                    intermidiate_obj._evaluated_value__ = resp['result']
+                    intermidiate_obj._evaluated_value__ = resp.get('result')
                     intermidiate_obj._is_intermediate_uri__ = True
                     resv(intermidiate_obj)
                 else:
-                    resv(resp['result'])
+                    resv(resp.get('result'))
 
             try:
                 self.evaluate(obj_proxy, on_response=on_response)
