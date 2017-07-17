@@ -22,9 +22,10 @@ class RpcRemoteException(RpcException):
         reqid = resp['id']
         error_type = errors['type']
         tb = errors['tb']
-        msg = '{}: {}\n\n|--   Remote Traceback   --|\n\n{}\n\n|--   Remote Traceback end   --|'.format(error_type, errors['message'], tb)
+        err_msg = errors['message']
+        msg = '{}: {}\n\n|--   Remote Traceback   --|\n\n{}\n\n|--   Remote Traceback end   --|'.format(error_type, err_msg, tb)
         super(RpcRemoteException, self).__init__(session_id, reqid, msg)
         self.error_type = error_type
         self.stack = errors['stack']
         self.traceback = errors['tb']
-        self.message = errors['message']
+        self.message = err_msg

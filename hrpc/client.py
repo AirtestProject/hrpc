@@ -11,20 +11,22 @@ from .utils.promise import Promise
 
 
 class RpcClient(object):
-    def __init__(self, transport_class, auto_connect=True):
-        self.Transport = transport_class
-        self.transport = None
+    def __init__(self, auto_connect=True):
         self._timeout = 10
         self._resp_events = {}  # rpc request id -> threading.Event
         self._responses = {}  # reqid -> resp
         self._responses_mutex = threading.Lock()
         self._evaluated_count = 0
+        self.transport = self.initialize_transport()
 
         if auto_connect:
             self.connect()
 
-    def connect(self):
+    def initialize_transport(self):
         raise NotImplementedError
+
+    def connect(self):
+        self.transport.connect()
 
     def disconnect(self):
         self.transport.disconnect()
