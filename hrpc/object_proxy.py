@@ -28,6 +28,7 @@ class RpcObjectProxy(object):
         '_evaluated_value__',
         '_is_intermediate_uri__',
         '_parent_ref__',
+        '__call_no_evaluate__',
     )
 
     def __init__(self, uri, client, invocation_path=None, parent=None):
@@ -83,6 +84,9 @@ class RpcObjectProxy(object):
         return value
 
     def __call__(self, *args):
+        return self._client__.evaluate(self.__call_no_evaluate__(*args))
+
+    def __call_no_evaluate__(self, *args):
         remote_obj_cache = []
         calc_args = []
         for a in args:
@@ -95,8 +99,8 @@ class RpcObjectProxy(object):
                     calc_args.append(('', a))
             else:
                 calc_args.append(('', a))
-        path = self._invocation_path__ + (('call', tuple(calc_args)), )
-        return self._client__.evaluate(RpcObjectProxy(self._uri__, self._client__, path, self))
+        path = self._invocation_path__ + (('call', tuple(calc_args)),)
+        return RpcObjectProxy(self._uri__, self._client__, path, self)
 
     def __del__(self):
         # 代理对象析构时，请求远程对象也析构，并不需要等待返回

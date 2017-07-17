@@ -39,6 +39,7 @@ class RpcClient(object):
         return RpcObjectProxy(uri, self)
 
     def evaluate(self, obj_proxy, wait_for_response=True, out_response=None, on_response=None):
+        # TODO: evaluate 的流程和response handling的流程要分离
         if not isinstance(obj_proxy, RpcObjectProxy):
             raise RuntimeError('Only RpcObjectProxy object can be evaluated. got {}'.format(repr(obj_proxy)))
         if not self.connected:
@@ -94,6 +95,11 @@ class RpcClient(object):
         @Promise
         def prom(resv, reject):
             def on_response(resp):
+                if not resp:
+                    raise RpcException(self.transport.session_id, '', 'Remote responses nothing!')
+                if 'errors' in resp:
+                    raise RpcRemoteException(resp)
+
                 intermidiate_uri = resp.get('uri')
                 if intermidiate_uri:
                     intermidiate_obj = RpcObjectProxy(intermidiate_uri, self)
@@ -106,6 +112,33 @@ class RpcClient(object):
 
             try:
                 self.evaluate(obj_proxy, on_response=on_response)
+            except RpcException as e:
+                reject(e)
+
+        return prom
+
+    def invoke(self, object_proxy, method, args=()):
+        @Promise
+        def prom(resv, reject):
+            def on_response(resp):
+                if not resp:
+                    raise RpcException(self.transport.session_id, '', 'Remote responses nothing!')
+                if 'errors' in resp:
+                    raise RpcRemoteException(resp)
+
+                intermidiate_uri = resp.get('uri')
+                if intermidiate_uri:
+                    intermidiate_obj = RpcObjectProxy(intermidiate_uri, self)
+                    intermidiate_obj._evaluated__ = True
+                    intermidiate_obj._evaluated_value__ = resp.get('result')
+                    intermidiate_obj._is_intermediate_uri__ = True
+                    resv(intermidiate_obj)
+                else:
+                    resv(resp.get('result'))
+
+            try:
+                new_proxy = getattr(object_proxy, method).__call_no_evaluate__(*args)
+                self.evaluate(new_proxy, on_response=on_response)
             except RpcException as e:
                 reject(e)
 
