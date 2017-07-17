@@ -47,6 +47,7 @@ class Promise(object):
                             return resolve(ret)
                     except Exception as e:
                         traceback.print_exc()
+                        e.__tb__ = traceback.format_exc()
                         return reject(e)
                 else:
                     return resolve(*result, **kw)
@@ -61,6 +62,7 @@ class Promise(object):
                             return reject(ret)
                     except Exception as e:
                         traceback.print_exc()
+                        e.__tb__ = traceback.format_exc()
                         return reject(e)
                 else:
                     return reject(*error, **kw)
@@ -122,6 +124,7 @@ class Promise(object):
             self.__fulfill(*result, **kw)
         except Exception as e:
             traceback.print_exc()
+            e.__tb__ = traceback.format_exc()
             self.__reject(e)
 
     def __get_then(self, value):
@@ -150,6 +153,7 @@ class Promise(object):
             if self.state != self.PENDING:
                 return
             traceback.print_exc()
+            e.__tb__ = traceback.format_exc()
             on_rejected(e)
 
     def __handle(self, handler):
