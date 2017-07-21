@@ -10,8 +10,8 @@ class RpcException(Exception):
 
 
 class RpcTimeoutException(RpcException):
-    def __init__(self, session_id, reqid):
-        msg = 'rpc timeout on {}/{}'.format(session_id, reqid)
+    def __init__(self, session_id, reqid, uri, method):
+        msg = 'rpc timeout on {}/{}\nrequest origin likes:\nuri: {}\nmethod: {}'.format(session_id, reqid, uri, method)
         super(RpcTimeoutException, self).__init__(session_id, reqid, msg)
 
 

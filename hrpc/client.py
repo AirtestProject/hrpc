@@ -64,7 +64,7 @@ class RpcClient(object):
             if wait_for_response and not on_response:
                 success = evt.wait(timeout=self._timeout)
                 if not success:
-                    raise RpcTimeoutException(self.transport.session_id, reqid)
+                    raise RpcTimeoutException(self.transport.session_id, reqid, obj_proxy._uri__, obj_proxy._invocation_path__)
                 resp = self.get_response(reqid)
                 if out_response is not None:
                     out_response.update(resp)
