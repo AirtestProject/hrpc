@@ -12,7 +12,7 @@ from .utils.promise import Promise
 
 class RpcClient(object):
     def __init__(self, auto_connect=True):
-        self._timeout = 10
+        self._timeout = 15
         self._resp_events = {}  # rpc request id -> threading.Event
         self._responses = {}  # reqid -> resp
         self._responses_mutex = threading.Lock()
@@ -157,3 +157,9 @@ class RpcClient(object):
 
     def reset_evaluation_counter(self):
         self._evaluated_count = 0
+
+    def set_timeout(self, t):
+        self._timeout = t
+
+    def get_timeout(self):
+        return self._timeout
