@@ -52,7 +52,8 @@ class RpcClient(object):
             evt = threading.Event()
             if wait_for_response:
                 reqid = str(uuid.uuid4())
-                self._resp_events[reqid] = evt
+                with self._responses_mutex:
+                    self._resp_events[reqid] = evt
             else:
                 reqid = ''
 
@@ -153,7 +154,8 @@ class RpcClient(object):
                 evt.set()
 
     def get_response(self, reqid):
-        return self._responses.pop(reqid, None)
+        with self._responses_mutex:
+            return self._responses.pop(reqid, None)
 
     def reset_evaluation_counter(self):
         self._evaluated_count = 0
