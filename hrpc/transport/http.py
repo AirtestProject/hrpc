@@ -24,3 +24,10 @@ class HttpTransport(Transport):
 
     def disconnect(self):
         pass
+
+    def ping(self):
+        try:
+            r = requests.post(self.endpoint, data='', timeout=1)
+            return True
+        except:
+            return False

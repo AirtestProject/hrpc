@@ -25,6 +25,9 @@ class Transport(object):
     def disconnect(self):
         raise NotImplementedError
 
+    def ping(self):
+        raise NotImplementedError
+
     @property
     def connected(self):
         return self._connected

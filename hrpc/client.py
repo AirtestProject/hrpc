@@ -13,6 +13,7 @@ from .utils.promise import Promise
 class RpcClient(object):
     def __init__(self, auto_connect=True):
         self._timeout = 15
+        self._retry_count = 3
         self._resp_events = {}  # rpc request id -> threading.Event
         self._responses = {}  # reqid -> resp
         self._responses_mutex = threading.Lock()
@@ -60,30 +61,36 @@ class RpcClient(object):
             # emit request
             if on_response:
                 self.transport.add_response_callback(reqid, on_response)
-            self.transport.send({'id': reqid, 'uri': obj_proxy._uri__, 'method': obj_proxy._invocation_path__})
 
-            if wait_for_response and not on_response:
-                success = evt.wait(timeout=self._timeout)
-                if not success:
-                    raise RpcTimeoutException(self.transport.session_id, reqid, obj_proxy._uri__, obj_proxy._invocation_path__)
-                resp = self.get_response(reqid)
-                if out_response is not None:
-                    out_response.update(resp)
-                if not resp:
-                    raise RpcException(self.transport.session_id, reqid, 'Remote responses nothing!')
-                if 'errors' in resp:
-                    raise RpcRemoteException(resp)
+            for i in range(self._retry_count):
+                self.transport.send({'id': reqid, 'uri': obj_proxy._uri__, 'method': obj_proxy._invocation_path__})
 
-                intermidiate_uri = resp.get('uri')
-                if intermidiate_uri:
-                    result_is_intermidiate_obj = True
-                    intermidiate_obj = RpcObjectProxy(intermidiate_uri, self)
-                    intermidiate_obj._evaluated__ = True
-                    intermidiate_obj._evaluated_value__ = resp.get('result')
-                    intermidiate_obj._is_intermediate_uri__ = True
+                if wait_for_response and not on_response:
+                    timeout = not evt.wait(timeout=self._timeout)
+                    if timeout:
+                        if i == self._retry_count - 1:
+                            raise RpcTimeoutException(self.transport.session_id, reqid, obj_proxy._uri__, obj_proxy._invocation_path__)
+                        else:
+                            continue
+                    resp = self.get_response(reqid)
+                    if out_response is not None:
+                        out_response.update(resp)
+                    if not resp:
+                        raise RpcException(self.transport.session_id, reqid, 'Remote responses nothing!')
+                    if 'errors' in resp:
+                        raise RpcRemoteException(resp)
 
-                obj_proxy._evaluated_value__ = resp.get('result')
-            obj_proxy._evaluated__ = True
+                    intermidiate_uri = resp.get('uri')
+                    if intermidiate_uri:
+                        result_is_intermidiate_obj = True
+                        intermidiate_obj = RpcObjectProxy(intermidiate_uri, self)
+                        intermidiate_obj._evaluated__ = True
+                        intermidiate_obj._evaluated_value__ = resp.get('result')
+                        intermidiate_obj._is_intermediate_uri__ = True
+
+                    obj_proxy._evaluated_value__ = resp.get('result')
+                obj_proxy._evaluated__ = True
+                break  # 正常流程不用重试
 
         if result_is_intermidiate_obj:
             return intermidiate_obj
