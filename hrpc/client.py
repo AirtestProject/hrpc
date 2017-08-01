@@ -71,6 +71,7 @@ class RpcClient(object):
                         if i == self._retry_count - 1:
                             raise RpcTimeoutException(self.transport.session_id, reqid, obj_proxy._uri__, obj_proxy._invocation_path__)
                         else:
+                            print('rpc timeout, retries remains {}'.format(self._retry_count))
                             continue
                     resp = self.get_response(reqid)
                     if out_response is not None:
