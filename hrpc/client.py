@@ -13,7 +13,7 @@ from .utils.promise import Promise
 class RpcClient(object):
     def __init__(self, auto_connect=True):
         self._timeout = 15
-        self._retry_count = 3
+        self._retry_count = 2
         self._resp_events = {}  # rpc request id -> threading.Event
         self._responses = {}  # reqid -> resp
         self._responses_mutex = threading.Lock()
