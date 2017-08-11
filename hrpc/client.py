@@ -13,7 +13,6 @@ from .utils.promise import Promise
 class RpcClient(object):
     def __init__(self, auto_connect=True):
         self._timeout = 15
-        self._retry_count = 2
         self._resp_events = {}  # rpc request id -> threading.Event
         self._responses = {}  # reqid -> resp
         self._responses_mutex = threading.Lock()
@@ -46,8 +45,6 @@ class RpcClient(object):
         if not self.connected:
             raise RuntimeError('Rpc client not connected! Please call connect() first.')
 
-        result_is_intermidiate_obj = False
-        intermidiate_obj = None
         if not obj_proxy._evaluated__:
             self._evaluated_count += 1
             evt = threading.Event()
@@ -62,40 +59,30 @@ class RpcClient(object):
             if on_response:
                 self.transport.add_response_callback(reqid, on_response)
 
-            for i in range(self._retry_count):
-                self.transport.send({'id': reqid, 'uri': obj_proxy._uri__, 'method': obj_proxy._invocation_path__})
+            self.transport.send({'id': reqid, 'uri': obj_proxy._uri__, 'method': obj_proxy._invocation_path__})
 
-                if wait_for_response and not on_response:
-                    timeout = not evt.wait(timeout=self._timeout)
-                    if timeout:
-                        if i == self._retry_count - 1:
-                            raise RpcTimeoutException(self.transport.session_id, reqid, obj_proxy._uri__, obj_proxy._invocation_path__)
-                        else:
-                            print('rpc timeout, retries remains {}'.format(self._retry_count))
-                            continue
-                    resp = self.get_response(reqid)
-                    if out_response is not None:
-                        out_response.update(resp)
-                    if not resp:
-                        raise RpcException(self.transport.session_id, reqid, 'Remote responses nothing!')
-                    if 'errors' in resp:
-                        raise RpcRemoteException(resp)
+            if wait_for_response and not on_response:
+                timeout = not evt.wait(timeout=self._timeout)
+                if timeout:
+                    raise RpcTimeoutException(self.transport.session_id, reqid, obj_proxy._uri__, obj_proxy._invocation_path__)
 
-                    intermidiate_uri = resp.get('uri')
-                    if intermidiate_uri:
-                        result_is_intermidiate_obj = True
-                        intermidiate_obj = RpcObjectProxy(intermidiate_uri, self)
-                        intermidiate_obj._evaluated__ = True
-                        intermidiate_obj._evaluated_value__ = resp.get('result')
-                        intermidiate_obj._is_intermediate_uri__ = True
+                resp = self.get_response(reqid)
+                if out_response is not None:
+                    out_response.update(resp)
+                if not resp:
+                    raise RpcException(self.transport.session_id, reqid, 'Remote responses nothing!')
+                if 'errors' in resp:
+                    raise RpcRemoteException(resp)
 
-                    obj_proxy._evaluated_value__ = resp.get('result')
+                intermidiate_uri = resp.get('uri')
+                if intermidiate_uri is not None:
+                    obj_proxy._uri__ = intermidiate_uri
+                    obj_proxy._invocation_path__ = ()
+                    obj_proxy._is_intermediate_uri__ = True
                 obj_proxy._evaluated__ = True
-                break  # 正常流程不用重试
+                obj_proxy._evaluated_value__ = resp.get('result')
 
-        if result_is_intermidiate_obj:
-            return intermidiate_obj
-        elif obj_proxy._is_intermediate_uri__:
+        if obj_proxy._is_intermediate_uri__:
             return obj_proxy
         else:
             return obj_proxy._evaluated_value__
@@ -146,7 +133,8 @@ class RpcClient(object):
                     resv(resp.get('result'))
 
             try:
-                new_proxy = getattr(object_proxy, method).__call_no_evaluate__(*args)
+                cache = []
+                new_proxy = getattr(object_proxy, method).__call_no_evaluate__(cache, *args)
                 self.evaluate(new_proxy, on_response=on_response)
             except RpcException as e:
                 reject(e)

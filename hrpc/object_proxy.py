@@ -84,22 +84,23 @@ class RpcObjectProxy(object):
         return value
 
     def __call__(self, *args):
-        return self._client__.evaluate(self.__call_no_evaluate__(*args))
-
-    def __call_no_evaluate__(self, *args):
         remote_obj_cache = []
+        return self._client__.evaluate(self.__call_no_evaluate__(remote_obj_cache, *args))
+
+    def __call_no_evaluate__(self, _cache, *args):
+        # 执行call，但不对call进行立即求值，只对参数进行求值，并将是intermediate的参数保存到_cache中，以免远程释放
         calc_args = []
         for a in args:
             if type(a) is RpcObjectProxy:
                 a = self._client__.evaluate(a)
                 if type(a) is RpcObjectProxy and a._is_intermediate_uri__:
-                    remote_obj_cache.append(a)
+                    _cache.append(a)
                     calc_args.append(('uri', a._uri__))
                 else:
                     calc_args.append(('', a))
             else:
                 calc_args.append(('', a))
-        path = self._invocation_path__ + (('call', tuple(calc_args)),)
+        path = self._invocation_path__ + (('call', tuple(calc_args)), )
         return RpcObjectProxy(self._uri__, self._client__, path, self)
 
     def __del__(self):
@@ -113,9 +114,8 @@ class RpcObjectProxy(object):
         val = self._client__.evaluate(self)
         if type(val) is RpcObjectProxy:
             val = val._evaluated_value__
-        if six.PY2:
-            if type(val) is unicode:
-                val = val.encode('utf-8')
+        if six.PY2 and isinstance(val, unicode):
+            val = val.encode('utf-8')
         return str(val)
 
     if six.PY2:
