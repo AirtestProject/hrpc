@@ -1,13 +1,38 @@
 # coding=utf-8
 __author__ = 'lxn3032'
 
-
+import functools
 import threading
+import warnings
 import uuid
 
 from .object_proxy import RpcObjectProxy
 from .exceptions import RpcException, RpcRemoteException, RpcTimeoutException
 from .utils.promise import Promise
+
+
+# 这个方法搓逼了一点，但是可以暂时缓解一下，不会影响原有的函数语义
+# 在每次exctpyes时就把transport reconnect一下
+def reconnect_when(exctypes, count=5):
+    def wrapper(func):
+        @functools.wraps(func)
+        def wrapped(client, *args, **kwargs):
+            ex = None
+            for i in range(count):
+                try:
+                    if i > 0:
+                        warnings.warn('Exception occurred! Transport will reconnect. retry remains {}. '
+                                      'exception message:\n{}'.format(count - i, ex))
+                        client.transport.disconnect()
+                        client.transport.connect()
+
+                    return func(client, *args, **kwargs)
+                except exctypes as e:
+                    ex = e
+            if ex:
+                raise ex
+        return wrapped
+    return wrapper
 
 
 class RpcClient(object):
@@ -38,6 +63,7 @@ class RpcClient(object):
     def remote(self, uri):
         return RpcObjectProxy(uri, self)
 
+    @reconnect_when(RpcTimeoutException)
     def evaluate(self, obj_proxy, wait_for_response=True, out_response=None, on_response=None):
         # TODO: evaluate 的流程和response handling的流程要分离
         if not isinstance(obj_proxy, RpcObjectProxy):
@@ -64,7 +90,8 @@ class RpcClient(object):
             if wait_for_response and not on_response:
                 timeout = not evt.wait(timeout=self._timeout)
                 if timeout:
-                    raise RpcTimeoutException(self.transport.session_id, reqid, obj_proxy._uri__, obj_proxy._invocation_path__)
+                    raise RpcTimeoutException(self.transport.session_id, reqid, str(self.transport), obj_proxy._uri__,
+                                              obj_proxy._invocation_path__)
 
                 resp = self.get_response(reqid)
                 if out_response is not None:

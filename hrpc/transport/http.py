@@ -31,3 +31,7 @@ class HttpTransport(Transport):
             return True
         except:
             return False
+
+    def __str__(self):
+        msg = '<hrpc.__builtin__.transport over http> endpoint: {}'.format(self.endpoint)
+        return msg
