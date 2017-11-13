@@ -1,4 +1,6 @@
-from distutils.core import setup
+# coding=utf-8
+
+from setuptools import setup, find_packages
 from pip.req import parse_requirements
 
 
@@ -6,13 +8,15 @@ from pip.req import parse_requirements
 install_reqs = parse_requirements('requirements.txt', session=False)
 
 # reqs is a list of requirement
-# e.g. ['django==1.5.1', 'mezzanine==1.4.6']
-reqs = [str(ir.req) for ir in install_reqs]
+reqs = [str(ir.req) for ir in install_reqs if ir.req]
 
 setup(
     name='hrpc',
-    version='0.0.1',
-    py_modules=['hrpc'],
-    packages=['hrpc'],
+    version='1.0.0',
+    keywords="hrpc rpc",
+    description='A common interface based RPC framework',
+    packages=find_packages(),
+    include_package_data=True,
     install_requires=reqs,
+    license='Apache License 2.0',
 )
