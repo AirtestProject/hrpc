@@ -28,4 +28,4 @@ class RpcRemoteException(RpcException):
         self.error_type = error_type
         self.stack = errors['stack']
         self.traceback = errors['tb']
-        self.message = err_msg
+        self.error_message = err_msg
