@@ -1,12 +1,15 @@
 # coding=utf-8
-__author__ = 'lxn3032'
 
+import sys
+import traceback
 import threading
 import uuid
 
 from .object_proxy import RpcObjectProxy
 from .exceptions import RpcException, RpcRemoteException, RpcTimeoutException
 from .utils.promise import Promise
+
+__author__ = 'lxn3032'
 
 
 class RpcClient(object):
@@ -91,18 +94,24 @@ class RpcClient(object):
         @Promise
         def prom(resv, reject):
             def on_response(resp):
-                if not resp:
-                    raise RpcException(self.transport.session_id, '', 'Remote responses nothing!')
-                if 'errors' in resp:
-                    raise RpcRemoteException(resp)
+                # 因为是在另一个线程，所以不能直接raise，要把exception传到reject里
+                try:
+                    if not resp:
+                        raise RpcException(self.transport.session_id, '', 'Remote responses nothing!')
+                    if 'errors' in resp:
+                        raise RpcRemoteException(resp)
+                except Exception as e:
+                    e.__tb__ = ''.join(traceback.format_exception(*sys.exc_info()))
+                    reject(e)
+                    return
 
-                intermidiate_uri = resp.get('uri')
-                if intermidiate_uri:
-                    intermidiate_obj = RpcObjectProxy(intermidiate_uri, self)
-                    intermidiate_obj._evaluated__ = True
-                    intermidiate_obj._evaluated_value__ = resp.get('result')
-                    intermidiate_obj._is_intermediate_uri__ = True
-                    resv(intermidiate_obj)
+                intermediate_uri = resp.get('uri')
+                if intermediate_uri:
+                    intermediate_obj = RpcObjectProxy(intermediate_uri, self)
+                    intermediate_obj._evaluated__ = True
+                    intermediate_obj._evaluated_value__ = resp.get('result')
+                    intermediate_obj._is_intermediate_uri__ = True
+                    resv(intermediate_obj)
                 else:
                     resv(resp.get('result'))
 
@@ -117,18 +126,24 @@ class RpcClient(object):
         @Promise
         def prom(resv, reject):
             def on_response(resp):
-                if not resp:
-                    raise RpcException(self.transport.session_id, '', 'Remote responses nothing!')
-                if 'errors' in resp:
-                    raise RpcRemoteException(resp)
+                # 因为是在另一个线程，所以不能直接raise，要把exception传到reject里
+                try:
+                    if not resp:
+                        raise RpcException(self.transport.session_id, '', 'Remote responses nothing!')
+                    if 'errors' in resp:
+                        raise RpcRemoteException(resp)
+                except Exception as e:
+                    e.__tb__ = ''.join(traceback.format_exception(*sys.exc_info()))
+                    reject(e)
+                    return
 
-                intermidiate_uri = resp.get('uri')
-                if intermidiate_uri:
-                    intermidiate_obj = RpcObjectProxy(intermidiate_uri, self)
-                    intermidiate_obj._evaluated__ = True
-                    intermidiate_obj._evaluated_value__ = resp.get('result')
-                    intermidiate_obj._is_intermediate_uri__ = True
-                    resv(intermidiate_obj)
+                intermediate_uri = resp.get('uri')
+                if intermediate_uri:
+                    intermediate_obj = RpcObjectProxy(intermediate_uri, self)
+                    intermediate_obj._evaluated__ = True
+                    intermediate_obj._evaluated_value__ = resp.get('result')
+                    intermediate_obj._is_intermediate_uri__ = True
+                    resv(intermediate_obj)
                 else:
                     resv(resp.get('result'))
 
