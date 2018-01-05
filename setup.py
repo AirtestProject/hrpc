@@ -12,7 +12,7 @@ reqs = [str(ir.req) for ir in install_reqs if ir.req]
 
 setup(
     name='hrpc',
-    version='1.0.2',
+    version='1.0.3',
     keywords="hrpc rpc",
     description='A common interface based RPC framework',
     packages=find_packages(),
