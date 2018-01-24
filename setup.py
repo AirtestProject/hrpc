@@ -19,4 +19,5 @@ setup(
     include_package_data=True,
     install_requires=reqs,
     license='Apache License 2.0',
+    url='https://github.com/AirtestProject/hrpc',
 )
