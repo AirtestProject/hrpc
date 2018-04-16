@@ -1,23 +1,22 @@
 # coding=utf-8
 
 from setuptools import setup, find_packages
-from pip.req import parse_requirements
 
 
-# parse_requirements() returns generator of pip.req.InstallRequirement objects
-install_reqs = parse_requirements('requirements.txt', session=False)
+def parse_requirements(filename='requirements.txt'):
+    """ load requirements from a pip requirements file. (replacing from pip.req import parse_requirements)"""
+    lineiter = (line.strip() for line in open(filename))
+    return [line for line in lineiter if line and not line.startswith("#")]
 
-# reqs is a list of requirement
-reqs = [str(ir.req) for ir in install_reqs if ir.req]
 
 setup(
     name='hrpc',
-    version='1.0.3',
+    version='1.0.4',
     keywords="hrpc rpc",
     description='A common interface based RPC framework',
     packages=find_packages(),
     include_package_data=True,
-    install_requires=reqs,
+    install_requires=parse_requirements(),
     license='Apache License 2.0',
     url='https://github.com/AirtestProject/hrpc',
 )
