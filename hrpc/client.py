@@ -6,7 +6,7 @@ import threading
 import uuid
 
 from .object_proxy import RpcObjectProxy
-from .exceptions import RpcException, RpcRemoteException, RpcTimeoutException
+from .exceptions import RpcException, RpcRemoteException, RpcTimeoutException, TransportDisconnected
 from .utils.promise import Promise
 
 __author__ = 'lxn3032'
@@ -44,8 +44,6 @@ class RpcClient(object):
         # TODO: evaluate 的流程和response handling的流程要分离
         if not isinstance(obj_proxy, RpcObjectProxy):
             raise RuntimeError('Only RpcObjectProxy object can be evaluated. got {}'.format(repr(obj_proxy)))
-        if not self.connected:
-            raise RuntimeError('Rpc client not connected! Please call connect() first.')
 
         if not obj_proxy._evaluated__:
             self._evaluated_count += 1
@@ -61,7 +59,12 @@ class RpcClient(object):
             if on_response:
                 self.transport.add_response_callback(reqid, on_response)
 
-            self.transport.send({'id': reqid, 'uri': obj_proxy._uri__, 'method': obj_proxy._invocation_path__})
+            try:
+                self.transport.send({'id': reqid, 'uri': obj_proxy._uri__, 'method': obj_proxy._invocation_path__})
+            except TransportDisconnected as e:
+                # 如果传输层断开了，则不需要析构该对象了
+                obj_proxy._is_intermediate_uri__ = False
+                raise
 
             if wait_for_response and not on_response:
                 timeout = not evt.wait(timeout=self._timeout)

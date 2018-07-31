@@ -14,6 +14,10 @@ def simple_caster(cast_type):
     return func
 
 
+def safe_repr(obj_proxy):
+    return '{}/{}'.format(obj_proxy._uri__, obj_proxy._invocation_path__)
+
+
 class RpcObjectProxy(object):
     """
     ensure immutable

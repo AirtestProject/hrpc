@@ -2,6 +2,10 @@
 __author__ = 'lxn3032'
 
 
+class TransportDisconnected(Exception):
+    pass
+
+
 class RpcException(Exception):
     def __init__(self, session_id, reqid, msg):
         super(RpcException, self).__init__(msg)

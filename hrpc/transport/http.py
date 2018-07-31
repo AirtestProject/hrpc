@@ -4,6 +4,9 @@ __author__ = 'lxn3032'
 
 import json
 import requests
+from requests.exceptions import ConnectionError
+
+from hrpc.exceptions import TransportDisconnected
 
 
 from hrpc.transport import Transport
@@ -16,14 +19,17 @@ class HttpTransport(Transport):
 
     def send(self, req):
         req['session_id'] = self.session_id
-        r = requests.post(self.endpoint, data=json.dumps(req), headers={'Content-Type': 'application/json'})
-        self.rpc_client.put_response(r.json())
+        try:
+            r = requests.post(self.endpoint, data=json.dumps(req), headers={'Content-Type': 'application/json'})
+            self.rpc_client.put_response(r.json())
+        except (ConnectionError, ValueError) as e:
+            raise TransportDisconnected(e)
 
     def connect(self):
         self.connected = True
 
     def disconnect(self):
-        pass
+        self.connected = False
 
     def ping(self):
         try:
