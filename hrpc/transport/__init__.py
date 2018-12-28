@@ -41,3 +41,6 @@ class Transport(object):
 
     def add_response_callback(self, reqid, cb):
         self._response_callbacks[reqid].add(cb)
+
+    def pop_response_callback(self, reqid):
+        return self._response_callbacks.pop(reqid, None)

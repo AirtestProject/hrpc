@@ -160,8 +160,12 @@ class RpcClient(object):
         return prom
 
     def put_response(self, resp):
+        reqid = resp.get('id')
+        if not reqid:
+            # 忽略没有对应的请求id的响应，一般是服务端收到响应的提示信息而已
+            return
+
         with self._responses_mutex:
-            reqid = resp['id']
             self._responses[reqid] = resp
             evt = self._resp_events.pop(reqid, None)
             if evt:
