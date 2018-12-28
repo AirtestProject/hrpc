@@ -15,7 +15,8 @@ class RpcException(Exception):
 
 class RpcTimeoutException(RpcException):
     def __init__(self, session_id, reqid, transport_desc, uri, method, timeout=None):
-        msg = 'rpc timeout on {}\nrequest origin likes:\nuri: {}\nmethod: {}'.format(transport_desc, uri, method)
+        msg = 'rpc timeout on {}\nrequest origin likes:\nrequestId: {}\nuri: {}\nmethod: {}'\
+              .format(transport_desc, reqid, uri, method)
         if timeout is not None:
             msg += '\ntimeout: {}s'.format(timeout)
         super(RpcTimeoutException, self).__init__(session_id, reqid, msg)

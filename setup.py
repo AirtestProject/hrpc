@@ -11,7 +11,7 @@ def parse_requirements(filename='requirements.txt'):
 
 setup(
     name='hrpc',
-    version='1.0.7',
+    version='1.0.8',
     keywords="hrpc rpc",
     description='A common interface based RPC framework',
     packages=find_packages(),
