@@ -17,10 +17,11 @@ class HttpTransport(Transport):
         super(HttpTransport, self).__init__(endpoint, client)
         self.connect()
 
-    def send(self, req):
+    def send(self, req, timeout=None):
         req['session_id'] = self.session_id
         try:
-            r = requests.post(self.endpoint, data=json.dumps(req), headers={'Content-Type': 'application/json'})
+            r = requests.post(self.endpoint, data=json.dumps(req), headers={'Content-Type': 'application/json'},
+                              timeout=timeout)
             self.rpc_client.put_response(r.json())
         except (ConnectionError, ValueError) as e:
             raise TransportDisconnected(e)
