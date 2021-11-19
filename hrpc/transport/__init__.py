@@ -16,7 +16,7 @@ class Transport(object):
         self._connected = False
         self._response_callbacks = defaultdict(set)
 
-    def send(self, req):
+    def send(self, req, timeout=None):
         raise NotImplementedError
 
     def connect(self):
