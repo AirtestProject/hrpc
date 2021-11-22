@@ -87,7 +87,7 @@ class RpcObjectProxy(object):
             self._client__.evaluate(RpcObjectProxy(self._uri__, self._client__, path, self))
         return value
 
-    def __call__(self, *args):
+    def __call__(self, *args, **kwargs):
         remote_obj_cache = []
         return self._client__.evaluate(self.__call_no_evaluate__(remote_obj_cache, *args))
 

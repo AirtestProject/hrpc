@@ -60,11 +60,14 @@ class RpcClient(object):
                 self.transport.add_response_callback(reqid, on_response)
 
             try:
-                self.transport.send({'id': reqid, 'uri': obj_proxy._uri__, 'method': obj_proxy._invocation_path__})
+                self.transport.send({'id': reqid, 'uri': obj_proxy._uri__, 'method': obj_proxy._invocation_path__},
+                                    timeout=None if wait_for_response else 0.3)
             except TransportDisconnected as e:
                 # 如果传输层断开了，则不需要析构该对象了
                 obj_proxy._is_intermediate_uri__ = False
-                raise
+                if wait_for_response:
+                    # 如果wait_for_response为false，则不关心执行结果是否正确
+                    raise
 
             if wait_for_response and not on_response:
                 timedout = not evt.wait(timeout=self._timeout)
